@@ -1,0 +1,7 @@
+name: 'Rest System'
+type: module
+description: 'Rest system demo module.'
+package: Axelerant
+core: 8.x
+dependencies:
+  - drupal:system

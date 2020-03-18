@@ -1,0 +1,62 @@
+<?php
+
+
+/**
+ * Provide a form-specific alteration instead of the global hook_form_alter().
+ *
+ * Implementations are responsible for adding cache contexts/tags/max-age as
+ * needed. See https://www.drupal.org/developing/api/8/cache.
+ *
+ * Modules can implement hook_form_FORM_ID_alter() to modify a specific form,
+ * rather than implementing hook_form_alter() and checking the form ID, or
+ * using long switch statements to alter multiple forms.
+ *
+ * Form alter hooks are called in the following order: hook_form_alter(),
+ * hook_form_BASE_FORM_ID_alter(), hook_form_FORM_ID_alter(). See
+ * hook_form_alter() for more details.
+ *
+ * @param $form
+ *   Nested array of form elements that comprise the form.
+ * @param $form_state
+ *   The current state of the form. The arguments that
+ *   \Drupal::formBuilder()->getForm() was originally called with are available
+ *   in the array $form_state->getBuildInfo()['args'].
+ * @param $form_id
+ *   String representing the name of the form itself. Typically this is the
+ *   name of the function that generated the form.
+ *
+ * @see hook_form_alter()
+ * @see hook_form_BASE_FORM_ID_alter()
+ * @see \Drupal\Core\Form\FormBuilderInterface::prepareForm()
+ *
+ * @ingroup form_api
+ */
+
+function rest_system_form_system_site_information_settings_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+    // Add Site Api field.
+    $config_factory = \Drupal::configFactory();
+    $config = $config_factory->get('system.site');
+    $form['site_information']['siteapikey'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Site API Key'),
+      '#default_value' => $config->get('siteapikey') ?? "No API Key yet",
+    );
+    // Alter the Submit button title.
+    $form['actions']['submit'] = [
+        '#type' => 'submit',
+        '#value' => t('Update Configuration'),
+        '#button_type' => 'primary',
+      ];
+    // Add submit handler to save the api information.
+    $form['actions']['submit']['#submit'][] = 'rest_system_form_system_site_information_settings_submit';
+
+}
+
+function rest_system_form_system_site_information_settings_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state){
+   $siteapikey =  $form_state->getValue('siteapikey');
+   $config_factory = \Drupal::configFactory();
+   $config = $config_factory->getEditable('system.site');
+   $config->set('siteapikey', $siteapikey);
+   $config->save();
+   \Drupal::messenger()->addMessage(t('the Site API Key has been saved with %apikey.', ['%apikey' => $siteapikey]));
+}
